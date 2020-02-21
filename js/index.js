@@ -1,150 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const activeColorHtml = document.getElementById('active-color');
-
-    let paint = {
-        defaultColor: '#f5b041',
-        painting: false,
-        width: 30,
-        height: 17,
-        action: 'brush'
-    }
-
-    activeColorHtml.value = paint.defaultColor;
-    
-    paint.grid = createGrid(paint);
-    initGrid(paint);
-    initPalette(colors);
-    renderGrid(paint);
-    
-    document.getElementById('grid').addEventListener('mousedown', (e) => {
-        const cell = e.target.closest('.cell');
-        if (!cell) {
-            return;
-        }
-        paint.painting = true;
-        handleCellAction(cell, paint, activeColorHtml.value);
-        renderGrid(paint);
-    });
-
-    document.getElementById('grid').addEventListener('mouseover', (e) => {
-        const cell = e.target.closest('.cell');
-        if (!cell || !paint.painting) {
-            return;
-        }
-        handleCellAction(cell, paint, activeColorHtml.value);
-        renderGrid(paint);
-    })
-    
-
-    document.addEventListener('mouseup', () => paint.painting = false);
-
-    document.getElementById('colors').addEventListener('click', (e) => {
-        const color = e.target.closest('div[data-color]')
-        if (!color) {
-            return;
-        }
-        const activeColor = color.getAttribute('data-color');
-        activeColorHtml.value = activeColor; 
-    });
-
-    document.getElementById('actions').addEventListener('click', e => {
-        const actionButton = e.target.closest('a');
-        if (!actionButton) {
-            return;
-        }
-        const prevActiveAction = actionButton.parentNode.getElementsByClassName('action-button__active');
-        prevActiveAction[0].classList.remove('action-button__active');
-
-        paint.action = actionButton.getAttribute('data-action');
-        actionButton.classList.add('action-button__active')
-    })
-});
-
-const initGrid = (paint) => {
-    const gridHtml = document.getElementById('grid');
-    gridHtml.innerHTML = createGridView(paint).innerHTML;
-}
-
-const createGrid = ({width = 16, height = 9}) => {
-    const grid = []
-    for (let r = 0; r < height; r++) {
-        const row = []
-        for (let c = 0; c < width; c++) {
-            row.push('#FFFFFF');
-        }
-        grid.push(row);
-    }
-    return grid;
-}
-
-const createGridView = ({width, height, grid}) => {
-    const gridHtml = document.createElement('div');
-    for (let r = 0; r < height; r++) {
-        const row = document.createElement('div');
-        row.classList = 'row';
-        for (let c = 0; c < width; c++) {
-            const cell = document.createElement('div');
-            cell.classList = 'cell';
-            cell.setAttribute('data-row', r);
-            cell.setAttribute('data-col', c);
-            row.append(cell);
-        }
-        gridHtml.append(row);
-    }
-    return gridHtml;
-}
-
-const initPalette = (colors = []) => {
-    const palette = document.getElementById('colors');
-    
-    palette.innerHTML = '';
-    for (const color of colors) {
-        const colorPicker = document.createElement('div');
-        colorPicker.style.backgroundColor = color;
-        colorPicker.setAttribute('data-color', color);
-        
-        palette.append(colorPicker);
-    }
-}
-
-const renderGrid = ({grid, width, height}) => {
-    const gridHtml = document.getElementById('grid');
-    for (let r = 0; r < height; r++) {
-        for (let c = 0; c < width; c++) {
-            gridHtml.children[r].children[c].style.backgroundColor = grid[r][c]
-        }
-    }    
-}
-
-const handleCellAction = (cell, paint, activeColor) => {
-    const row = +cell.getAttribute('data-row');
-    const col = +cell.getAttribute('data-col');
-    if (paint.action == 'brush') {
-        paint.grid[row][col] = activeColor;
-    } 
-    if (paint.action == 'fill') {
-        fill(paint, activeColor, paint.grid[row][col], row, col);
-    }
-}
-
-const fill = (paint, newColor, oldColor, row, col) => {
-    const {grid, width, height} = paint;
-    if (row < 0 || col < 0 || row >= height || col >= width) {
-        return;
-    }
-    if (grid[row][col] != oldColor || oldColor == newColor) {
-        return;   
-    }
-    grid[row][col] = newColor;
-    for (let dx = -1; dx < 2; dx++) {
-        for (let dy = -1; dy < 2; dy++) {
-            if (Math.abs(dx) + Math.abs(dy) == 1) {
-                fill(paint, newColor, oldColor, row + dy, col + dx);
-            }
-        }
-    }
-}
-
 const colors = [
     "#f9ebea","#f2d7d5","#e6b0aa","#d98880","#cd6155","#c0392b","#a93226","#922b21","#7b241c","#641e16",
     "#fdedec","#fadbd8","#f5b7b1","#f1948a","#ec7063","#e74c3c","#cb4335","#b03a2e","#943126","#78281f", 
@@ -166,4 +19,200 @@ const colors = [
     "#f2f4f4","#e5e8e8","#ccd1d1","#b2babb","#99a3a4","#7f8c8d","#707b7c","#616a6b","#515a5a","#424949",
     "#ebedef","#d6dbdf","#aeb6bf","#85929e","#5d6d7e","#34495e","#2e4053","#283747","#212f3c","#1b2631",
     "#eaecee","#d5d8dc","#abb2b9","#808b96","#566573","#2c3e50","#273746","#212f3d","#1c2833","#17202a"
-  ];
+];
+
+const dimensions = {
+    width: 30,
+    height: 17
+}
+
+const state = {
+    paint : {
+        activeColor: '#f5b041',
+        painting: false,
+        action: 'brush'
+    }, 
+    colors,
+    grid: initGrid(dimensions)
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const gridView = document.getElementById('grid');
+    gridView.innerHTML = createGridView(state).innerHTML;
+
+    const paletteView = document.getElementById('colors');
+    paletteView.innerHTML = createPaletteView(state).innerHTML;
+
+    render(state);
+    
+    gridView.addEventListener('mousedown', (e) => {
+        const cell = e.target.closest('.cell');
+        if (!cell) {
+            return;
+        }
+        state.paint.painting = true;
+        handleCellAction(cell, state);
+        render(state);
+    });
+
+    gridView.addEventListener('mouseover', (e) => {
+        const cell = e.target.closest('.cell');
+        if (!cell || !state.paint.painting) {
+            return;
+        }
+        handleCellAction(cell, state);
+        render(state);
+    });
+
+    document.addEventListener('mouseup', () => state.paint.painting = false);
+
+    document.getElementById('colors').addEventListener('click', (e) => {
+        const color = e.target.closest('div[data-color]')
+        if (!color) {
+            return;
+        }
+        state.paint.activeColor = color.getAttribute('data-color');
+        renderColorPicker(state.paint);
+    });
+
+    document.getElementById('active-color').addEventListener('change', e => paint.activeColor = e.value)
+
+    document.getElementById('actions').addEventListener('click', e => {
+        const actionButton = e.target.closest('a');
+        if (!actionButton) {
+            return;
+        }
+
+        const action = actionButton.getAttribute('data-action');
+        
+        if (['brush', 'fill'].includes(action)) {
+            state.paint.action = action;
+        } else {
+            if (action == 'save') {
+                localStorage.setItem('grid', JSON.stringify(state.grid));
+            } 
+            if (action == 'load') {
+                const grid = JSON.parse(localStorage.getItem('grid'));
+                state.grid = grid; 
+            }
+            if (action == 'clear') {
+                state.grid = initGrid(dimensions);
+            }
+        }
+        render(state);
+    });
+});
+
+const render = (state) => {
+    renderColorPicker(state.paint);
+    renderGrid(state);
+    renderActions(state);
+}
+
+const renderColorPicker = ({activeColor}) => {
+    const colorPicker = document.getElementById('active-color');
+    colorPicker.value = activeColor;
+}
+
+function initGrid({width = 16, height = 9}, defaultColor = '#FFFFFF') {
+    const grid = []
+    for (let r = 0; r < height; r++) {
+        const row = []
+        for (let c = 0; c < width; c++) {
+            row.push(defaultColor);
+        }
+        grid.push(row);
+    }
+    return grid;
+}
+
+const createGridView = ({grid}) => {
+    const gridView = document.createElement('div');
+    for (let r = 0; r < grid.length; r++) {
+        const row = document.createElement('div');
+        row.classList = 'row';
+        for (let c = 0; c < grid[r].length; c++) {
+            const cell = document.createElement('div');
+            cell.classList = 'cell';
+            cell.setAttribute('data-row', r);
+            cell.setAttribute('data-col', c);
+            row.append(cell);
+        }
+        gridView.append(row);
+    }
+
+    return gridView;
+}
+
+const createPaletteView = ({colors = []}) => {
+    const palette = document.createElement('div');
+    
+    for (const color of colors) {
+        const colorPicker = document.createElement('div');
+        colorPicker.style.backgroundColor = color;
+        colorPicker.setAttribute('data-color', color);
+        
+        palette.append(colorPicker);
+    }
+    return palette;
+}
+
+const renderGrid = ({grid}) => {
+    const gridView = document.getElementById('grid');
+    for (let row = 0; row < grid.length; row++) {
+        for (let col = 0; col < grid[row].length; col++) {
+            gridView.children[row].children[col].style.backgroundColor = grid[row][col]
+        }
+    }    
+}
+
+const handleCellAction = (cell, {paint, grid}) => {
+    const row = +cell.getAttribute('data-row');
+    const col = +cell.getAttribute('data-col');
+    if (paint.action == 'brush') {
+        grid[row][col] = paint.activeColor;
+    } 
+    if (paint.action == 'fill') {
+        fill(paint, grid, grid[row][col], row, col);
+    }
+}
+
+const fill = (paint, grid, oldColor, row, col) => {
+    const [width, height] = [grid[0].length, grid.length];
+    if (row < 0 || col < 0 || row >= height || col >= width) {
+        return;
+    }
+    if (grid[row][col] != oldColor || oldColor == paint.activeColor) {
+        return;   
+    }
+    grid[row][col] = paint.activeColor;
+    for (let shift of moveGenerator()) {
+        if (shift) {
+            const [dx, dy] = shift
+            fill(paint, grid, oldColor, row + dy, col + dx)
+        }
+    }
+}
+
+function* moveGenerator() {
+    for (let dx = -1; dx < 2; dx++) {
+        for (let dy = -1; dy < 2; dy++) {
+            if (Math.abs(dx) + Math.abs(dy) == 1) {
+                yield [dx, dy];
+            }
+        }
+    }
+}
+
+const renderActions = ({paint}) => {
+    const prevActiveAction = document.getElementsByClassName('action-button__active');
+    prevActiveAction[0].classList.remove('action-button__active');
+    document.querySelector(`[data-action=${paint.action}]`).classList.add('action-button__active')
+     
+    const loadButtonView = document.querySelector('[data-action=load]')
+    if (localStorage.getItem('grid') === null) {
+        loadButtonView.style.visibility = 'hidden';
+    } else {
+        loadButtonView.style.visibility = 'visible';
+    }
+}

@@ -1,3 +1,8 @@
+html {
+    color: #383333;
+    font-size: 1em;
+}
+
 #active-color {
     width: 40px;
     height: 40px;
@@ -22,6 +27,7 @@
 
 #actions {
     display: flex;
+    margin: 5px 0;
 }
 
 .action-button {
@@ -30,13 +36,17 @@
     text-align: center;
     align-items: center;
     justify-content: center;
-    border: 2px solid #eeeeee;
+    border: 2px solid #8da0d4;
     border-radius: 5px;
     margin: 0 5px;
 }
 
+.action-button:hover {
+    background-color: #8da0d4;
+}
+
 .action-button__active {
-    background-color: #eeeeee;
+    background-color: #8da0d4;
 }
 
 #colors {
