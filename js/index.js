@@ -22,8 +22,8 @@ const colors = [
 ];
 
 const dimensions = {
-    width: 30,
-    height: 17
+    width: 40,
+    height: 15
 }
 
 const state = {
@@ -75,7 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderColorPicker(state.paint);
     });
 
-    document.getElementById('active-color').addEventListener('change', e => paint.activeColor = e.value)
+    document.getElementById('active-color').addEventListener('change', e => {
+        state.paint.activeColor = e.target.value
+        console.log(e.target.value)
+    })
 
     document.getElementById('actions').addEventListener('click', e => {
         const actionButton = e.target.closest('a');
@@ -178,20 +181,32 @@ const handleCellAction = (cell, {paint, grid}) => {
 }
 
 const fill = (paint, grid, oldColor, row, col) => {
+    for (const v of findAdjacents(paint, grid, oldColor, [row, col], [])) {
+        const [r, c] = JSON.parse(v); 
+        grid[r][c] = paint.activeColor;
+    }
+}
+
+function findAdjacents(paint, grid, oldColor, [row, col], visited) {
     const [width, height] = [grid[0].length, grid.length];
+    let result = new Set(visited);
     if (row < 0 || col < 0 || row >= height || col >= width) {
-        return;
+        return result;
     }
-    if (grid[row][col] != oldColor || oldColor == paint.activeColor) {
-        return;   
+    if (grid[row][col] != oldColor) {
+        return result;  
     }
-    grid[row][col] = paint.activeColor;
+    result.add(JSON.stringify([row, col]));
     for (let shift of moveGenerator()) {
         if (shift) {
             const [dx, dy] = shift
-            fill(paint, grid, oldColor, row + dy, col + dx)
+            const nextCell = [row + dy, col + dx];
+            if (!result.has(JSON.stringify(nextCell))) {
+                result = findAdjacents(paint, grid, oldColor, nextCell, result);   
+            }
         }
     }
+    return result;
 }
 
 function* moveGenerator() {
