@@ -1,4 +1,4 @@
-[app link](http://mihaillinkov-pixel-art-maker.surge.sh/)
+[app link](https://mihaillinkov-pixel-art-maker.surge.sh/)
 
 # Pixel Art Maker
 
