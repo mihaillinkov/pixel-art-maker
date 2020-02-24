@@ -56,6 +56,7 @@ html {
 #colors {
     display: grid;
     grid-template-columns: repeat(40, 25px);
+    gap: 2px;
 }
 
 #colors > div {
